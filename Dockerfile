@@ -1,10 +1,40 @@
-FROM ubuntu:20.04
+FROM ubuntu:16.04
+LABEL maintainer "Shuanglei Tao - tsl0922@gmail.com"
 
-ARG TARGETARCH
-COPY ./dist/${TARGETARCH}/ttyd /usr/bin/ttyd
-RUN apt-get update && apt-get install -y --no-install-recommends tini && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+      ca-certificates \
+      cmake \
+      curl \
+      g++ \
+      git \
+      libjson-c2 \
+      libjson-c-dev \
+      libssl1.0.0 \
+      libssl-dev \
+      libwebsockets7 \
+      libwebsockets-dev \
+      pkg-config \
+      vim-common \
+    && git clone --depth=1 https://github.com/tsl0922/ttyd.git /tmp/ttyd \
+    && cd /tmp/ttyd && mkdir build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=RELEASE .. \
+    && make \
+    && make install \
+    && apt-get remove -y --purge \
+        cmake \
+        g++ \
+        libwebsockets-dev \
+        libjson-c-dev \
+        libssl-dev \
+        pkg-config \
+    && apt-get purge -y \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/ttyd
 
-WORKDIR /root
+EXPOSE 7681
 
-ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["ttyd", "bash"]
+ENTRYPOINT ["ttyd","-p $PROT"]
+
+CMD ["bash"]
